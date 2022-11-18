@@ -29,9 +29,9 @@ endef
 	-@git branch $(TRACER_BRANCH) -q 2>/dev/null || true                 `# create tracer branch if not existent`
 	-@cp -a .git/index $(WORK_INDEX)                                     `# backup git index`
 	-@$(call git_soft_checkout, $(TRACER_BRANCH))                        `# switch to tracer branch`
-	-@git add . -A --ignore-errors                                       `# add files to commit`
-	-@(echo "> $(MSG)" && echo $(STUID) $(STUNAME) && uname -a && uptime `# generate commit msg`) \
-	                | git commit -F - $(GITFLAGS)                        `# commit changes in tracer branch`
+#	-@git add . -A --ignore-errors                                       `# add files to commit`
+#	-@(echo "> $(MSG)" && echo $(STUID) $(STUNAME) && uname -a && uptime `# generate commit msg`) \
+#	                | git commit -F - $(GITFLAGS)                        `# commit changes in tracer branch`
 	-@$(call git_soft_checkout, $(WORK_BRANCH))                          `# switch to work branch`
 	-@mv $(WORK_INDEX) .git/index                                        `# restore git index`
 
