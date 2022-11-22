@@ -18,6 +18,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
+#include <memory/paddr.h>
 
 static int is_batch_mode = false;
 
@@ -53,6 +54,12 @@ static int cmd_q(char *args) {
 }
 
 static int cmd_help(char *args);
+static int cmd_si(char *args);
+static int cmd_info(char *args);
+static int cmd_examine_memory(char *args);
+static int cmd_p(char *args);
+static int cmd_w(char *args);
+static int cmd_d(char *args);
 
 static struct {
   const char *name;
@@ -64,7 +71,14 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
 
   /* TODO: Add more commands */
-
+  {"si", "Single step", cmd_si},
+  {"info", "info SUBCMD", cmd_info},
+  {"x", "Examine  memory", cmd_examine_memory},
+  // {"b", "Set breakpoint", cmd_b},
+  {"w", "Set watchpoint", cmd_w},
+  {"d", "Delete breakpoint(s).", cmd_d},
+  {"p", "print EXPR", cmd_p},
+  {"exit", "Exit NEMU", cmd_q},
 };
 
 #define NR_CMD ARRLEN(cmd_table)
@@ -89,6 +103,96 @@ static int cmd_help(char *args) {
     }
     printf("Unknown command '%s'\n", arg);
   }
+  return 0;
+}
+
+static int cmd_si(char *args) {
+  int step;
+
+  if (args == NULL)
+    step = 1;
+  else
+    step = atoi(args);
+  cpu_exec(step);
+  return 0;
+}
+
+static int cmd_info(char *args) {
+  switch (*args) {
+  case 'r': //打印寄存器状态
+    isa_reg_display();
+    break;
+  case 'w': //打印监视点信息
+    printf("Not implement\n");
+    // sdb_list_watchpoint();
+    break;
+
+  default:
+    printf("undefined info args\n");
+    break;
+  }
+  return 0;
+}
+
+//扫描内存
+static int cmd_examine_memory(char *args) {
+  char *argv[2];
+  paddr_t addr;
+  int size;
+  int i;
+  word_t data;
+
+  argv[0] = strtok(args, " ");
+  if (argv[0] == NULL)
+    return -1;
+
+  argv[1] = strtok(NULL, " ");
+
+  // printf("argv[0]:%s, argv[1]:%s \r\n", argv[0], argv[1]);
+  sscanf(argv[0], "%d", &size);
+  sscanf(argv[1], "%x", &addr);
+  // printf("size:%d, addr:%x \r\n", size, addr);
+
+  for (i = 0; i < size; i++) {
+    data = paddr_read(addr, 4);
+    printf("addr: 0x%x, data: 0x%x\r\n", (uint32_t)addr, (uint32_t)data);
+    addr += 4;
+  }
+
+  return 0;
+}
+
+static int cmd_p(char *args)
+{
+  bool result;
+  if (args == NULL)
+    goto p_error;
+
+  word_t r = expr(args, &result);
+  if (result == true)
+  {
+    printf(FMT_WORD "\n", r);
+  }
+  else
+  {
+    printf("Bad expression\n");
+  }
+
+  return 0;
+p_error:
+  printf("Command format: \"p EXPR\"");
+  return -1;
+}
+
+static int cmd_w(char *args)
+{
+  printf("Not implement\n");
+  return 0;
+}
+
+static int cmd_d(char *args)
+{
+  printf("Not implement\n");
   return 0;
 }
 
