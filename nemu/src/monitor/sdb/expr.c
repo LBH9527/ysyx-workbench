@@ -122,6 +122,7 @@ static bool make_token(char *e) {
         switch (rules[i].token_type) {
           case TK_DEC:
           case TK_HEX:
+          case TK_REG:
             strncpy( tokens[nr_token].str, substr_start, substr_len); 
             tokens[nr_token].type = rules[i].token_type;
             nr_token++;
@@ -139,7 +140,7 @@ static bool make_token(char *e) {
           case TK_AND:
           case TK_OR:
           case TK_EQ:
-          case '!':
+          case '!':         
             tokens[nr_token].type = rules[i].token_type;
             nr_token++;
           break;
@@ -375,7 +376,8 @@ static uint32_t eval(int p, int q, bool *success) {
          break;
       case TK_DEC:
         sscanf(tokens[p].str, "%d", &val1); 
-
+      case TK_REG:
+        return isa_reg_str2val(tokens[p].str, success);
         break;
       default:
         assert(0);
@@ -475,7 +477,7 @@ word_t expr(char *e, bool *success) {
     if (tokens[i].type == '*' &&
         (i == 0 || (tokens[i - 1].type == '(') || (tokens[i - 1].type == '+') ||
          (tokens[i - 1].type == '-'))) {
-      tokens[i].type = TK_DEREF;
+       tokens[i].type = TK_DEREF;    //# 指针解引用
     }
   }
   word_t ret = 0;  

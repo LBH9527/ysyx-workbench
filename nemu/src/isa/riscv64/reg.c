@@ -33,5 +33,27 @@ void isa_reg_display() {
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
+  uint32_t i = 0;
+  bool is_find = false;
+  
+  for(i=0; i<sizeof(regs)/sizeof(regs[0]); i++)
+  {
+      if (regs[i] == s)
+      {
+          is_find = true;
+          break;
+      }
+
+  }
+  if (is_find == true)
+  {
+     printf("0x%lx \r\n", cpu.gpr[i]);
+     *success = true;
+  }
+  else
+  {
+    *success = false;
+  }
+
   return 0;
 }

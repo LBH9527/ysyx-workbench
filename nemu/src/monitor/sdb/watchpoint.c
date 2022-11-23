@@ -16,12 +16,20 @@
 #include "sdb.h"
 
 #define NR_WP 32
+#define EXPR_SIZE 128
 
 typedef struct watchpoint {
   int NO;
   struct watchpoint *next;
-
+  
   /* TODO: Add more members if necessary */
+  bool in_use;
+  struct
+  {
+    char expr[EXPR_SIZE];
+    uint32_t old_val;
+    uint32_t new_val;
+  };
 
 } WP;
 
@@ -30,8 +38,10 @@ static WP *head = NULL, *free_ = NULL;
 
 void init_wp_pool() {
   int i;
+  
   for (i = 0; i < NR_WP; i ++) {
     wp_pool[i].NO = i;
+    wp_pool[i].in_use = false;
     wp_pool[i].next = (i == NR_WP - 1 ? NULL : &wp_pool[i + 1]);
   }
 
@@ -40,4 +50,98 @@ void init_wp_pool() {
 }
 
 /* TODO: Implement the functionality of watchpoint */
+static WP* new_wp()
+{
+    assert(free_->next != NULL);
+    WP *p = free_;
+    free_ = free_->next ;
+    assert(p->in_use == false);
+    p->in_use = true;
+  
+    return p;
+}
+void free_wp(WP *wp)
+{
+  assert(wp >= &wp_pool[0] && wp < &wp_pool[NR_WP - 1]);
+  assert(wp->in_use == true);
 
+
+  wp->in_use = false;
+  wp->next = free_;
+  free_ = wp;
+}
+
+WP *scan_watchpoint()
+{
+  WP *p;
+  bool success;
+
+  for (p = head; p!= NULL; p = p->next)
+  {
+    assert(p->in_use == true);
+    
+    p->new_val = expr(p->expr, &success);
+    if (p->old_val != p->new_val)
+    {
+      return p;
+    }
+  }
+
+  return NULL;
+}
+
+int set_watchpoint(char *e)
+{
+	uint32_t val;
+	bool success;
+	val = expr(e, &success);
+	if (!success)
+		return -1;
+    
+  WP *p = new_wp();
+  assert((strlen(e) + 1) <= EXPR_SIZE);
+  strcpy(p->expr, e);
+	p->old_val = val;
+
+  p->next = head;
+  head = p;
+
+  return p->NO;
+
+}
+
+bool delete_watchpoint(int NO)
+{
+    WP *p;
+    WP *p_prev;
+
+    if (head->NO == NO)
+    {
+        p = head;
+        free_wp(p);
+        head = head->next;
+        return true;
+    }
+    else
+    {
+        p = head->next;
+        p_prev = head;
+        while (p!= NULL)
+        {
+          if (p->NO != NO)
+          {
+            p = p->next;
+            p_prev = p_prev->next;
+          }
+          else
+          {
+              p_prev->next = p->next;  
+              free_wp(p);
+              return true;
+          }
+          
+        }
+    }
+
+    return false;
+}

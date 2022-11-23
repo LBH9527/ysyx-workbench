@@ -20,6 +20,9 @@
 #include "sdb.h"
 #include <memory/paddr.h>
 
+extern int set_watchpoint(char *e);
+extern bool delete_watchpoint(int NO);
+
 static int is_batch_mode = false;
 
 void init_regex();
@@ -71,13 +74,15 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
 
   /* TODO: Add more commands */
-  {"si", "Single step", cmd_si},
-  {"info", "info SUBCMD", cmd_info},
-  {"x", "Examine  memory", cmd_examine_memory},
-  // {"b", "Set breakpoint", cmd_b},
+  {"si", "Single Step Execution", cmd_si},
+  {"info", "Print register and watch point info", cmd_info},
+  {"x", "x <address> Print memory.", cmd_examine_memory},
+  {"p", "print EXPR", cmd_p},
+
+ // {"b", "Set breakpoint", cmd_b},
   {"w", "Set watchpoint", cmd_w},
   {"d", "Delete breakpoint(s).", cmd_d},
-  {"p", "print EXPR", cmd_p},
+
   {"exit", "Exit NEMU", cmd_q},
 };
 
@@ -186,13 +191,16 @@ p_error:
 
 static int cmd_w(char *args)
 {
-  printf("Not implement\n");
+  set_watchpoint(args);
   return 0;
 }
 
 static int cmd_d(char *args)
 {
-  printf("Not implement\n");
+  int no;
+
+  sscanf(args, "%d", &no);
+  delete_watchpoint(no);
   return 0;
 }
 
