@@ -191,7 +191,13 @@ p_error:
 
 static int cmd_w(char *args)
 {
-  set_watchpoint(args);
+  int32_t watch_number = -1;
+
+  watch_number = set_watchpoint(args);
+  if(watch_number >=0 )
+  {
+    printf("Hardware watchpoint %d: %s,\r\n", watch_number, args);
+  }
   return 0;
 }
 
