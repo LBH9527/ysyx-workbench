@@ -24,7 +24,7 @@
 #undef DBG_TAG
 #undef DBG_LVL
 #define DBG_TAG          "sdb_expr"
-#define DBG_LVL          DBG_LOG
+#define DBG_LVL          DBG_WARNING
 #include <debug_log.h> 
 
 enum {
@@ -117,7 +117,7 @@ static bool make_token(char *e) {
          * to record the token in the array `tokens'. For certain types
          * of tokens, some extra actions should be performed.
          */
-        // printf("token_type : %d \r\n", rules[i].token_type);
+        LOG_D("token_type : %d \r\n", rules[i].token_type);
 
         switch (rules[i].token_type) {
           case TK_DEC:
@@ -369,6 +369,7 @@ static uint32_t eval(int p, int q, bool *success) {
      * For now this token should be a number.
      * Return the value of the number.
      */
+    LOG_D("tokens[p].str : %s, tokens[p].type: %d", tokens[p].str,tokens[p].type);
     switch (tokens[p].type)
     {
       case TK_HEX:
@@ -376,12 +377,14 @@ static uint32_t eval(int p, int q, bool *success) {
          break;
       case TK_DEC:
         sscanf(tokens[p].str, "%d", &val1); 
+        break;
       case TK_REG:
         return isa_reg_str2val(tokens[p].str, success);
         break;
       default:
         assert(0);
     }
+    LOG_D("val1 = %d", val1);
     return  val1;
   }
   else if (check_parentheses(p, q) == true) {
@@ -465,7 +468,7 @@ word_t expr(char *e, bool *success) {
     return 0;
   }
 
-  // printf("nr_token : %d \r\n", nr_token);
+  LOG_D("nr_token : %d", nr_token);
 
   for (i = 0; i < nr_token; i++) {
     if (tokens[i].type == '-' &&
@@ -483,6 +486,6 @@ word_t expr(char *e, bool *success) {
   word_t ret = 0;  
   /* TODO: Insert codes to evaluate the expression. */
   ret = eval(0, nr_token-1, success);
-  // printf(" = 0x%x\r\n",ret);
+  LOG_D("ret = 0x%lx ",ret);
   return ret;
 }

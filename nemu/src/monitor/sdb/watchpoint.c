@@ -71,7 +71,7 @@ void free_wp(WP *wp)
   free_ = wp;
 }
 
-WP *scan_watchpoint()
+WP *scan_watchpoint(void)
 {
   WP *p;
   bool success;
