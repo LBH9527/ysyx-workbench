@@ -105,7 +105,7 @@
 #define LOG_D(fmt, ...)      dbg_log_line("D", 36, fmt, ##__VA_ARGS__)
 #else
 #define LOG_D(...)
-```
+
 #endif
 
 #if (DBG_LEVEL >= DBG_INFO)
