@@ -16,6 +16,12 @@
 #include <isa.h>
 #include <memory/paddr.h>
 
+#undef DBG_TAG
+#undef DBG_LVL
+#define DBG_TAG          "nemu/monitor"
+#define DBG_LVL          DBG_LOG
+#include <debug_log.h> 
+
 void init_rand();
 void init_log(const char *log_file);
 void init_mem();
@@ -69,6 +75,10 @@ static long load_img() {
 }
 
 static int parse_args(int argc, char *argv[]) {
+  LOG_D("argc is %d", argc);
+  for(uint32_t i = 0; i< argc; i++)
+    LOG_D("argc%d is %s", i, argv[i]);
+
   const struct option table[] = {
     {"batch"    , no_argument      , NULL, 'b'},
     {"log"      , required_argument, NULL, 'l'},
