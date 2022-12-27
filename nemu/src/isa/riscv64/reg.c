@@ -26,34 +26,50 @@ const char *regs[] = {
 void isa_reg_display() {
   uint32_t i = 0;
 
+  printf("PC = 0x%lx,", cpu.pc);
   for(i=0; i<sizeof(regs)/sizeof(regs[0]); i++)
   {
-      printf("%5s 0x%lx \r\n", regs[i], cpu.gpr[i]);
+      if (i % 4  == 0)
+         printf("\r\n");
+      printf("%5s = 0x%016lx,", regs[i], cpu.gpr[i]);      
   }
+  printf("\r\n");
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
   uint32_t i = 0;
   bool is_find = false;
-  
+
+  printf("s : %s\r\n", s);
   for(i=0; i<sizeof(regs)/sizeof(regs[0]); i++)
   {
-      if (regs[i] == s)
+      if (strcmp(regs[i], s) == 0)
       {
           is_find = true;
           break;
       }
-
   }
+
   if (is_find == true)
   {
      printf("0x%lx \r\n", cpu.gpr[i]);
      *success = true;
   }
-  else
+  else if (strcmp("pc", s) == 0)
   {
+      *success = true;
+  }
+  else 
+  {
+    printf("This register was not found!\r\n");
     *success = false;
   }
 
   return 0;
+}
+
+const char* isa_reg_name_display(uint32_t no) 
+{
+    assert(no < sizeof(regs)/sizeof(regs[0]));
+    return regs[no];
 }

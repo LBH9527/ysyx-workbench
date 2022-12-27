@@ -24,7 +24,7 @@
 #undef DBG_TAG
 #undef DBG_LVL
 #define DBG_TAG          "sdb_expr"
-#define DBG_LVL          DBG_WARNING
+#define DBG_LVL          DBG_LOG
 #include <debug_log.h> 
 
 enum {
@@ -45,7 +45,7 @@ static struct rule {
   {"[0-9]+", TK_DEC},
   {"0[xX][0-9a-fA-F]+", TK_HEX},
   {"^\\$[Xx](3[0-1]|[0-2]?[0-9])$", TK_REG},
-   {"\\$(\\$0|ra|[sgt]p|t[0-6]|a[0-7]|s([0-9]|1[0-1]))", TK_REG},//registers
+  {"\\$0|ra|[sgt]p|t[0-6]|a[0-7]|s([0-9]|1[0-1])|pc", TK_REG},//registers
   {" +", TK_NOTYPE},    // spaces
   {"\\+", '+'},         // plus
  

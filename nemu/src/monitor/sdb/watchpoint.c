@@ -145,3 +145,34 @@ bool delete_watchpoint(int NO)
 
     return false;
 }
+
+int list_watchpoint(void)
+{
+  WP *p;
+  // bool success;
+
+  for (p = head; p!= NULL; p = p->next)
+  {
+    assert(p->in_use == true);
+    printf("%s \r\n" ,p->expr);
+  }
+
+  return 0;
+}
+
+bool scan_watchpoint_display(void)
+{
+  WP* wp;
+  bool find_watchpoint = false;
+
+  wp = scan_watchpoint();
+  if (wp != NULL)
+  {
+    // printf("\n\nHit watchpoint %d at address 0x%08x, expr = %s\n", wp->NO, cpu.eip - instr_len, wp->expr);
+    printf("old value = %#08x\nnew value = %#08x\n", wp->old_val, wp->new_val);
+    wp->old_val = wp->new_val;
+    find_watchpoint = true;
+  }
+
+  return find_watchpoint;
+}

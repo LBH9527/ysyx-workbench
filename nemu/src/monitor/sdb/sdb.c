@@ -19,9 +19,8 @@
 #include <readline/history.h>
 #include "sdb.h"
 #include <memory/paddr.h>
+#include "watchpoint.h"
 
-extern int set_watchpoint(char *e);
-extern bool delete_watchpoint(int NO);
 
 static int is_batch_mode = false;
 
@@ -63,6 +62,7 @@ static int cmd_examine_memory(char *args);
 static int cmd_p(char *args);
 static int cmd_w(char *args);
 static int cmd_d(char *args);
+static int cmd_b(char *args);
 
 static struct {
   const char *name;
@@ -76,11 +76,11 @@ static struct {
   /* TODO: Add more commands */
   {"si", "Single Step Execution", cmd_si},
   {"info", "Print register and watch point info", cmd_info},
-  {"x", "x <address> Print memory.", cmd_examine_memory},
+  {"x", "x <size ><address> q: print memory.", cmd_examine_memory},
   {"p", "print EXPR", cmd_p},
 
- // {"b", "Set breakpoint", cmd_b},
-  {"w", "Set watchpoint", cmd_w},
+  {"b", "Set breakpoint: b <address>", cmd_b},
+  {"w", "w $pc <address> : Set watchpoint", cmd_w},
   {"d", "Delete breakpoint(s).", cmd_d},
 
   {"exit", "Exit NEMU", cmd_q},
@@ -128,8 +128,8 @@ static int cmd_info(char *args) {
     isa_reg_display();
     break;
   case 'w': //打印监视点信息
-    printf("Not implement\n");
-    // sdb_list_watchpoint();
+    //printf("Not implement\n");
+    list_watchpoint();
     break;
 
   default:
@@ -197,8 +197,14 @@ static int cmd_w(char *args)
   if(watch_number >=0 )
   {
     printf("Hardware watchpoint %d: %s,\r\n", watch_number, args);
+    return 0;
   }
-  return 0;
+  else
+  {
+    printf("Hardware watchpoint set error\r\n");
+    return -1;
+  }
+ 
 }
 
 static int cmd_d(char *args)
@@ -209,6 +215,17 @@ static int cmd_d(char *args)
   delete_watchpoint(no);
   return 0;
 }
+
+static int cmd_b(char *args)
+{
+  vaddr_t addr;
+
+  sscanf(args, "%ld", &addr);
+  int NO = set_breakpoint(addr);
+	printf("set breakpoint %d at address 0x%08lx\n", NO, addr);
+  return 0;
+}
+
 
 void sdb_set_batch_mode() {
   is_batch_mode = true;
@@ -258,4 +275,7 @@ void init_sdb() {
 
   /* Initialize the watchpoint pool. */
   init_wp_pool();
+  
+  init_bp_list();
+
 }
