@@ -186,6 +186,20 @@ config DIFFTEST_REF_NAME
   default "kvm" if DIFFTEST_REF_KVM
   default "spike" if DIFFTEST_REF_SPIKE
   default "none"
+
+config IRINGBUF
+  depends on ITRACE && DIFFTEST
+  bool "Enable iringbuf"
+  default y
+
+config MTRACE
+  bool "Enable memory trace"
+  default n
+
+config FTRACE
+  bool "Enable function trace"
+  default n
+
 endmenu
 
 if MODE_SYSTEM
@@ -211,5 +225,9 @@ config RT_CHECK
 
 config WATCHPOINT
   bool "Enable watchpoint checking"
+  default n
+
+config BREAKPOINT
+  bool "Enable breakpoint checking"
   default n
 endmenu

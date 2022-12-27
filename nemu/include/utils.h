@@ -74,4 +74,6 @@ uint64_t get_time();
   } while (0)
 
 
+extern void instruct_ringbuf_write(char *data, size_t size, NEMUState state);
+
 #endif
