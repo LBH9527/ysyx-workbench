@@ -69,6 +69,8 @@ ringbuf_t g_instruct_buf;
 
 void init_instruct_ringbuf(void) 
 {
+    Log("Instruct Ringbuf: %s", MUXDEF(CONFIG_IRINGBUF, ANSI_FMT("ON", ANSI_FG_GREEN), ANSI_FMT("OFF", ANSI_FG_RED)));
+
     ringbuf_init(&g_instruct_buf);
 
 }
@@ -92,8 +94,8 @@ void instruct_ringbuf_write(char *data, size_t size, NEMUState state)
     sprintf(fix, "\r\n"); 
     ringbuf_write(&g_instruct_buf, fix, strlen(fix));
 
-    if(state.state != NEMU_RUNNING)
+    if(state.state == NEMU_ABORT)
     {
-        printf("%s", g_instruct_buf.logbuf);
+        printf("%s \r\n", g_instruct_buf.logbuf);
     }
 }

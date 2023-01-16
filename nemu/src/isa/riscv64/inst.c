@@ -17,6 +17,7 @@
 #include <cpu/cpu.h>
 #include <cpu/ifetch.h>
 #include <cpu/decode.h>
+#include "trace.h"
 
 #undef DBG_TAG
 #undef DBG_LVL
@@ -121,9 +122,12 @@ static int decode_exec(Decode *s) {
   INSTPAT("??????? ????? ????? 101 ????? 00000 11", lhu  , I, R(dest) = Mr(src1 + imm, 2) & BITMASK(16));
 
   //jal 跳转并链接 (Jump and Link). J-type, x[rd] = pc+4; pc += sext(offset)
-  INSTPAT("??????? ????? ????? ??? ????? 11011 11", jal    , J, R(dest) = s->pc + 4 ; s->dnpc = s->pc + imm); //rd ← pc + 4 ; pc ← pc + imm20
+  INSTPAT("??????? ????? ????? ??? ????? 11011 11", jal    , J, R(dest) = s->pc + 4 ; s->dnpc = s->pc + imm;   \
+                                                                  IFDEF(CONFIG_FTRACE, if(dest == 1) function_trace(s->pc, s->dnpc, true) ) ); //rd ← pc + 4 ; pc ← pc + imm20
   //jalr 跳转并寄存器链接 (Jump and Link Register). I-type, t =pc+4; pc=(x[rs1]+sext(offset))&~1; x[rd]=t
-  INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, R(dest) = s->pc + 4 ; s->dnpc = ( (src1 +  imm ) & ~1) ); 
+  INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, R(dest) = s->pc + 4 ; s->dnpc = ( (src1 +  imm ) & ~1) ; \
+                                                                IFDEF(CONFIG_FTRACE, if(s->isa.inst.val == 0x8067) function_trace(s->pc, s->dnpc, false);
+                                                                else function_trace(s->pc, s->dnpc, true) )); 
   // slli rd, rs1, shamt x[rd] = x[rs1] ≪ shamt
   // 立即数逻辑左移(Shift Left Logical Immediate). I-type, RV32I and RV64I.
   // 把寄存器 x[rs1]左移 shamt位，空出的位置填入 0，结果写入 x[rd]。对于 RV32I，仅当 shamt[5]=0 .时，指令才是有效的
@@ -168,6 +172,12 @@ static int decode_exec(Decode *s) {
   INSTPAT("0000000 ????? ????? 000 ????? 01110 11", addw   , R, R(dest) = SEXT( (src1 + src2), 32) );
   // or 取或(OR). R-type,  x[rd] = x[rs1] |  x[rs2]
   INSTPAT("0000000 ????? ????? 110 ????? 01100 11", or     , R, R(dest) = src1 | src2 );
+  //   ori rd, rs1, immediate x[rd] = x[rs1] | sext(immediate)
+  // 立即数取或(OR Immediate). R-type, RV32I and RV64I.
+  // 把寄存器 x[rs1]和有符号扩展的立即数 immediate 按位取或，结果写入 x[rd]。
+  // 压缩形式： c.or rd, rs2
+  INSTPAT("??????? ????? ????? 110 ????? 00100 11", ori     , R, R(dest) = src1 | imm );
+
   // add  加 (Add). R-type, x[rd] = x[rs1] + x[rs2]
   INSTPAT("0000000 ????? ????? 000 ????? 01100 11", add    , R, R(dest) = src1 + src2 );
   //sllw 逻辑左移字(Shift Left Logical Word). R-type, RV64I only. x[rd] = sext ( (x[rs1] ≪ x[rs2][4: 0]) [31: 0])
@@ -202,7 +212,13 @@ static int decode_exec(Decode *s) {
                                                                 R(dest) = SEXT( BITS(src1, 31, 0) / BITS(src2, 31, 0) ,32); \
                                                                 LOG_D("dest : 0x%lx", R(dest))  );    
  
-  
+  //   divuw rd, rs1, rs2 x[rd] = sext(x[rs1][31:0] ÷u x[rs2][31:0])
+  // 无符号字除法(Divide Word, Unsigned). R-type, RV64M.
+  // 用寄存器 x[rs1]的低 32 位除以寄存器 x[rs2]的低 32 位，向零舍入，将这些数视为无符号数，
+  // 把经符号位扩展的 32 位商写入 x[rd]
+  INSTPAT("0000001 ????? ????? 101 ????? 01110 11", divuw   , R, R(dest) = SEXT( (word_t)( BITS(src1, 31, 0) / BITS(src2, 31, 0) ) ,32); );  
+
+
   //sltu  无符号小于则置位(Set if Less Than, Unsigned). R-type, RV32I and RV64I. x[rd] = (x[rs1] <� x[rs2])
   INSTPAT("0000000 ????? ????? 011 ????? 01100 11", sltu    , R, R(dest) = ((word_t)src1 < (word_t)src2)? 1: 0; );  
 
@@ -224,13 +240,31 @@ static int decode_exec(Decode *s) {
   // 求无符号数的余数(Remainder, Unsigned). R-type, RV32M and RV64M.
   // x[rs1]除以 x[rs2]，向 0 舍入，都视为无符号数，余数写入 x[rd]。
   INSTPAT("0000001 ????? ????? 111 ????? 01100 11", remu  , R, R(dest) = (word_t)src1 % (word_t)src2 ); 
+  // remuw rd, rs1, rs2 x[rd] = sext(x[rs1][31: 0] %� x[rs2][31: 0])
+  // 求无符号数的余数字(Remainder Word, Unsigned). R-type, RV64M only.
+  // x[rs1]的低 32 位除以 x[rs2]的低 32 位，向 0 舍入，都视为无符号数，将余数的有符号扩展
+  // 写入 x[rd]。
+  INSTPAT("0000001 ????? ????? 111 ????? 01110 11", remuw  , R, R(dest) = SEXT( ((word_t)BITS(src1, 31, 0) % (word_t)BITS(src2, 31, 0)), 32) ); 
+  // remw rd, rs1, rs2 x[rd] = sext(x[rs1][31: 0] %� x[rs2][31: 0])
+  // 求余数字(Remainder Word). R-type, RV64M only.
+  // x[rs1]的低 32 位除以 x[rs2]的低 32 位，向 0 舍入，都视为 2 的补码，将余数的有符号扩展
+  // 写入 x[rd]。
+  INSTPAT("0000001 ????? ????? 110 ????? 01110 11", remw  , R, R(dest) = SEXT( ((sword_t)BITS(src1, 31, 0) % (sword_t)BITS(src2, 31, 0)), 32) ); 
 
   // divu rd, rs1, rs2 x[rd] = x[rs1] ÷u x[rs2]
   // 无符号除法(Divide, Unsigned). R-type, RV32M and RV64M.
   // 用寄存器 x[rs1]的值除以寄存器 x[rs2]的值，向零舍入，将这些数视为无符号数，把商写入
   // x[rd]。
   INSTPAT("0000001 ????? ????? 101 ????? 01100 11", divu  , R, R(dest) = (word_t)src1 / (word_t)src2 ); 
-
+  // xor rd, rs1, rs2 x[rd] = x[rs1] ^ x[rs2]
+  // 异或(Exclusive-OR). R-type, RV32I and RV64I.
+  // x[rs1]和 x[rs2]按位异或，结果写入 x[rd]。
+  INSTPAT("0000000 ????? ????? 100 ????? 01100 11", xor  , R, R(dest) = src1 ^ src2 ); 
+  // sll rd, rs1, rs2 x[rd] = x[rs1] ≪ x[rs2]
+  // 逻辑左移(Shift Left Logical). R-type, RV32I and RV64I.
+  // 把寄存器 x[rs1]左移 x[rs2]位，空出的位置填入 0，结果写入 x[rd]。 x[rs2]的低 5 位（如果是
+  // RV64I 则是低 6 位）代表移动位数，其高位则被忽略。
+  INSTPAT("0000000 ????? ????? 001 ????? 01100 11", sll  , R, R(dest) = src1 << BITS(src2, 6, 0) ); 
 
   // beqz : Branch if Equal to Zero = beq rs1, x0, offset.
   // beq :Branch if Equal. B-type ; if (rs1 == rs2) pc += sext(offset)
