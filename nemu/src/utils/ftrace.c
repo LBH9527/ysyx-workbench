@@ -162,7 +162,9 @@ void init_ftrace(const char *image_elf)
     bool find_symtab = false;
     bool find_strtab = false;
 
-    
+    memset(&pShdr_of_symtab, 0, sizeof(pShdr_of_symtab));
+    memset(&pShdr_of_strtab, 0, sizeof(pShdr_of_strtab));
+
     fseek(elf_fp, header.e_shoff, SEEK_SET);
     for(i = 0; i<header.e_shnum; i++)
     {
