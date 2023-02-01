@@ -6,12 +6,13 @@
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 
 #define PRINTF_BUF_LENGTH  128
+char pBuf[PRINTF_BUF_LENGTH];
 
 int printf(const char *fmt, ...) 
 {
   // panic("Not implemented");
   int ret = 0;
-  char pBuf[PRINTF_BUF_LENGTH];
+  
 
   va_list ap;
   va_start(ap, fmt);
@@ -25,7 +26,7 @@ int printf(const char *fmt, ...)
 
 int vsprintf(char *out, const char *fmt, va_list ap) 
 {
-    return (vsnprintf(out, sizeof(out), fmt, ap));
+    return (vsnprintf(out, PRINTF_BUF_LENGTH, fmt, ap));
 }
 
 int sprintf(char *out, const char *fmt, ...) {
@@ -78,16 +79,17 @@ static int uint64_to_str(uint64_t ui64Val, char *pcBuf)
 
   return ret;
 }
+#define FLAG_PAD_ZERO   (1 < 0)
 
 int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
   // panic("Not implemented");
   // uint32_t i;
-  // uint32_t flag;
+  // uint32_t flag = 0;
   const char *src;
   char *dst;
   int d;
   char *s;
-  // char c;
+  char c;
   int temp;
   int char_count = 0;
 
@@ -99,6 +101,12 @@ int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
     if (*src == '%')
     { 
       src++;
+      // if (*src == 0)
+      // {
+      //   flag |= FLAG_PAD_ZERO;
+      //   src++;
+      // }
+      // flag 
       switch (*src) 
       {
         case 's':              /* string */
@@ -117,11 +125,14 @@ int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
             dst += temp;           
             char_count += temp; 
             break;
-        // case 'c':              /* char */
-        //     /* need a cast here since va_arg only
-        //       takes fully promoted types */
-        //     c = (char) va_arg(ap, int);
-        //     break;
+        case 'c':              /* char */
+            /* need a cast here since va_arg only
+              takes fully promoted types */
+            c = (char) va_arg(ap, int);
+            *dst = c;
+            dst++;
+            char_count++;
+            break;
         default:
             assert(0);
             break;
@@ -144,7 +155,7 @@ int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
   {
       *dst = '\0';
   }
-
+  assert(char_count < n);
   return char_count;
 }
 
