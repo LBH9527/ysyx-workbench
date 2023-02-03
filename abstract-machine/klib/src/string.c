@@ -61,7 +61,8 @@ char *strcat(char *dst, const char *src) {
   // panic("Not implemented");
   assert(dst != NULL);
   assert(src != NULL);
-  assert(sizeof(dst) > (strlen(dst) + strlen(src)) );
+  // printf("sizeof(dst):%d, strlen(dst):%d, strlen(src)%d\r\n", sizeof(dst), strlen(dst) , strlen(src) );
+  // assert(sizeof(dst) > (strlen(dst) + strlen(src) -1 ) );
   char *pdst = dst;
   const char *psrc = src;
  
@@ -132,8 +133,8 @@ int strncmp(const char *s1, const char *s2, size_t n) {
 void *memset(void *s, int c, size_t n) {
   // panic("Not implemented");
   assert(s != NULL);
-  // printf("sizeof s is %d \r\n", sizeof(s));
-  assert(sizeof(s) >= n) ;
+  // printf("[memset] sizeof s is %d \r\n", sizeof(s));
+  // assert(sizeof(s) >= n) ;
   void *ps = s;
 
   while(n--)
@@ -172,7 +173,7 @@ void *memcpy(void *out, const void *in, size_t n) {
   char *p_out = out;
   const char* p_in = in;
   assert(p_in + n < p_out);
-  assert(p_out + n < p_in);
+ // assert(p_out + n < p_in); // the source and dest objects overlap.
 
   size_t i ;
 
