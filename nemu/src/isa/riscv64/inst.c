@@ -173,10 +173,10 @@ static int decode_exec(Decode *s) {
   // or 取或(OR). R-type,  x[rd] = x[rs1] |  x[rs2]
   INSTPAT("0000000 ????? ????? 110 ????? 01100 11", or     , R, R(dest) = src1 | src2 );
   //   ori rd, rs1, immediate x[rd] = x[rs1] | sext(immediate)
-  // 立即数取或(OR Immediate). R-type, RV32I and RV64I.
+  // 立即数取或(OR Immediate). I-type, RV32I and RV64I.
   // 把寄存器 x[rs1]和有符号扩展的立即数 immediate 按位取或，结果写入 x[rd]。
   // 压缩形式： c.or rd, rs2
-  INSTPAT("??????? ????? ????? 110 ????? 00100 11", ori     , R, R(dest) = src1 | imm );
+  INSTPAT("??????? ????? ????? 110 ????? 00100 11", ori     , I, R(dest) = src1 | imm );
 
   // add  加 (Add). R-type, x[rd] = x[rs1] + x[rs2]
   INSTPAT("0000000 ????? ????? 000 ????? 01100 11", add    , R, R(dest) = src1 + src2 );
@@ -186,7 +186,7 @@ static int decode_exec(Decode *s) {
   INSTPAT("0000000 ????? ????? 111 ????? 01100 11", and    , R, R(dest) = src1 & src2 );  
 
   // sub : Substract. R-type ; x[rd] = x[rs1] − x[rs2]
-  INSTPAT("0100000 ????? ????? 000 ????? 01100 11", addw   , R, R(dest) = src1 - src2 );
+  INSTPAT("0100000 ????? ????? 000 ????? 01100 11", sub   , R, R(dest) = src1 - src2 );
   // subw rd, rs1, rs2 x[rd] = sext((x[rs1] − x[rs2])[31: 0])
   // 减去字(Substract Word). R-type, RV64I only.
   // x[rs1]减去 x[rs2]，结果截为 32 位，有符号扩展后写入 x[rd]。忽略算术溢出
