@@ -196,6 +196,10 @@ static int decode_exec(Decode *s) {
   // x[rs1]的低 32 位除以 x[rs2]的低 32 位，向 0 舍入，都视为 2 的补码，将余数的有符号扩展 写入 x[rd]
   INSTPAT("0000001 ????? ????? 110 ????? 01110 11", remw   , R, LOG_D("[remw] src1 : 0x%lx, src2  0x%lx:", src1, src2);  \
                                                                 R(dest) = SEXT( BITS(src1, 31, 0) % BITS(src2, 31, 0) ,32) );  
+  // rem rd, rs1, rs2 x[rd] = x[rs1] %� x[rs2]
+  // 求余数(Remainder). R-type, RV32M and RV64M.
+  // x[rs1]除以 x[rs2]，向 0 舍入，都视为 2 的补码，余数写入 x[rd]
+  INSTPAT("0000001 ????? ????? 110 ????? 01100 11", rem   , R, R(dest) = src1 % src2 );  
   // mulw rd, rs1, rs2 x[rd] = sext((x[rs1] × x[rs2])[31: 0])
   // 乘字(Multiply Word). R-type, RV64M only.
   // 把寄存器 x[rs2]乘到寄存器 x[rs1]上，乘积截为 32 位，进行有符号扩展后写入 x[rd]。忽略算术溢出

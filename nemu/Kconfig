@@ -190,7 +190,7 @@ config DIFFTEST_REF_NAME
 config IRINGBUF
   depends on ITRACE && DIFFTEST
   bool "Enable iringbuf"
-  default y
+  default n
 
 config MTRACE
   bool "Enable memory trace"
@@ -198,6 +198,10 @@ config MTRACE
 
 config FTRACE
   bool "Enable function trace"
+  default n
+
+config DTRACE
+  bool "Enable device trace"
   default n
 
 endmenu
