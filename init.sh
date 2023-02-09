@@ -69,6 +69,10 @@ case $1 in
   npc)
     addenv NPC_HOME npc
     ;;
+  addenv)
+    addenv NEMU_HOME nemu
+    addenv AM_HOME abstract-machine
+    ;;    
   *)
     echo "Invalid input..."
     exit
