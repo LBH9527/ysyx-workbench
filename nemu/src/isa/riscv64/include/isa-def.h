@@ -18,9 +18,20 @@
 
 #include <common.h>
 
+#define CSR_MSTATUS 0x300
+#define CSR_MEPC    0x341
+#define CSR_MCAUSE  0x342
+
+#define CSR_MTVEC   0x305
+
 typedef struct {
   word_t gpr[32];
   vaddr_t pc;
+  word_t csr_mepc;    //存放触发异常的PC
+  word_t csr_mstatus; //存放处理器的状态
+  word_t csr_mcause;  //存放触发异常的原因
+  word_t csr_mtvec;   //异常时，处理器跳转的地址
+  //word_t csrs[4096];
 } riscv64_CPU_state;
 
 // decode

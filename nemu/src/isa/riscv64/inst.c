@@ -23,10 +23,12 @@
 #undef DBG_LVL
 #define DBG_TAG          "inst"
 // #define DBG_LVL           DBG_LOG
-#define DBG_LVL           DBG_ERROR
+#define DBG_LVL           DBG_INFO
+// #define DBG_LVL           DBG_ERROR
 
 #include <debug_log.h> 
 #define R(i) gpr(i)
+#define CSRs(i) csrs(i)
 #define Mr vaddr_read
 #define Mw vaddr_write
 
@@ -298,7 +300,48 @@ static int decode_exec(Decode *s) {
   // lui : Load Upper Immediate, U-type, x[rd] = sext(immediate[31:12] << 12)q
   INSTPAT("??????? ????? ????? ??? ????? 01101 11", lui    , U, LOG_D("lui : imm : 0x%lx", imm) ;R(dest) = imm);
 
+  // csrrw rd, csr, zimm[4:0] t = CSRs[csr]; CSRs[csr] = x[rs1]; x[rd] = t
+  // 读后写控制状态寄存器 (Control and Status Register Read and Write). I-type, RV32I and RV64I.
+  // 记控制状态寄存器 csr 中的值为 t。 把寄存器 x[rs1]的值写入 csr，再把 t 写入 x[rd]。
+  INSTPAT("??????? ????? ????? 001 ????? 11100 11", csrrw  , I,  R(dest) = csrs_get(imm) ; csrs_set(imm ,src1); \
+                                                                  LOG_I("csrrw : csr num = 0x%lx, src1 : 0x%lx", imm, src1) );
 
+  // csrrs rd, csr, rs1 t = CSRs[csr]; CSRs[csr] = t | x[rs1]; x[rd] = t
+  // 读后置位控制状态寄存器 (Control and Status Register Read and Set). I-type, RV32I and RV64I.
+  // 记控制状态寄存器 csr 中的值为 t。 把 t 和寄存器 x[rs1]按位或的结果写入 csr，再把 t 写入
+  // x[rd]。
+  INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrs  , I, R(dest) = csrs_get(imm) ; csrs_set(imm , src1 | R(dest)) ; \
+                                                                 LOG_I("csrrs : csr num = 0x%lx, src1 : 0x%lx", imm, src1) );
+
+  // //csrrc rd, csr, rs1 t = CSRs[csr]; CSRs[csr] = t &~x[rs1]; x[rd] = t
+  // // 读后清除控制状态寄存器 (Control and Status Register Read and Clear). I-type, RV32I and
+  // // RV64I
+  // INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrc  , I, R(dest) = (sword_t)src1 >> imm );
+
+  // // csrrwi rd, csr, zimm[4:0] x[rd] = CSRs[csr]; CSRs[csr] = zimm
+  // // 立即数读后写控制状态寄存器 (Control and Status Register Read and Write Immediate). I-type,
+  // // RV32I and RV64I
+  // INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrwi  , I, R(dest) = (sword_t)src1 >> imm );
+
+  
+  // INSTPAT("??????? ????? ????? 010 ????? 11100 11", cssrrsi  , I, R(dest) = (sword_t)src1 >> imm );
+
+  // // csrrci rd, csr, zimm[4:0] t = CSRs[csr]; CSRs[csr] = t | zimm; x[rd] = t
+  // // 立即数读后设置控制状态寄存器 (Control and Status Register Read and Set Immediate). I-type,
+  // // RV32I and RV64I.
+  // INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrci  , I, R(dest) = (sword_t)src1 >> imm );
+
+  // mret ExceptionReturn(Machine)
+  // 机器模式异常返回(Machine-mode Exception Return). R-type, RV32I and RV64I 特权架构
+  // 从机器模式异常处理程序返回。将 pc 设置为 CSRs[mepc], 将特权级设置成
+  // CSRs[mstatus].MPP, CSRs[mstatus].MIE 置成 CSRs[mstatus].MPIE, 并且将
+  // CSRs[mstatus].MPIE 为 1;并且，如果支持用户模式，则将 CSR [mstatus].MPP 设置为 0。
+  INSTPAT("0011000 00010 00000 000 00000 11100 11", mret  , R, s->dnpc = csrs_get(CSR_MEPC) + 4 ; \
+                                                                LOG_I("mret : mepc = 0x%lx", csrs_get(CSR_MEPC) ); );
+
+
+  INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall , I, s->dnpc = isa_raise_intr( R(17), s->pc); \
+                                                                LOG_I("ecall :  R(17) = 0x%lx",  R(17)) ); // R(17) is $a7
 
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , N, NEMUTRAP(s->pc, R(10))); // R(10) is $a0
   INSTPAT("??????? ????? ????? ??? ????? ????? ??", inv    , N, INV(s->pc));

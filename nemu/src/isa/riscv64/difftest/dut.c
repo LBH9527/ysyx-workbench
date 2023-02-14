@@ -30,7 +30,7 @@ bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
         printf("Spike does not support unaligned memory accesses");
         return true;
       }
-      is_the_same = false;
+      //is_the_same = false;
   }
 
   for(i=0; i<(sizeof(cpu.gpr)/sizeof(cpu.gpr[0])); i++)

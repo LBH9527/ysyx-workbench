@@ -24,6 +24,9 @@ static inline int check_reg_idx(int idx) {
 }
 
 #define gpr(idx) (cpu.gpr[check_reg_idx(idx)])
+//#define csrs(idx) (cpu.csrs[idx])
+extern void csrs_set(uint32_t idx, word_t value);
+extern word_t csrs_get(uint32_t idx);
 
 static inline const char* reg_name(int idx, int width) {
   extern const char* regs[];

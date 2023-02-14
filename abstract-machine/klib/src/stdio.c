@@ -617,6 +617,8 @@ int vsnprintf(char *out, size_t length, const char *fmt, va_list ap) {
         case 'd': 
         case 'i': num = PutSignedInt(pDst, fill, width, va_arg(ap, signed int)); break;
         case 'u': num = PutUnsignedInt(pDst, fill, width, va_arg(ap, unsigned int)); break;
+        // The void * pointer argument is printed in hexadecimal (as if by %#x or %#lx).
+        case 'p': num = PutHexa(pDst, fill, width, 0, va_arg(ap, unsigned int)); break;
         case 'x': num = PutHexa(pDst, fill, width, 0, va_arg(ap, unsigned int)); break;
         case 'X': num = PutHexa(pDst, fill, width, 1, va_arg(ap, unsigned int)); break;
         case 's': num = PutString(pDst, va_arg(ap, char *)); break;

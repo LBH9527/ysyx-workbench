@@ -73,3 +73,30 @@ const char* isa_reg_name_display(uint32_t no)
     assert(no < sizeof(regs)/sizeof(regs[0]));
     return regs[no];
 }
+
+void csrs_set(uint32_t idx, word_t value)
+{
+  switch(idx)
+  {
+    case CSR_MSTATUS: cpu.csr_mstatus = value; break;
+    case CSR_MEPC: cpu.csr_mepc = value; break;
+    case CSR_MCAUSE: cpu.csr_mcause = value;  break;
+    case CSR_MTVEC: cpu.csr_mtvec = value;  break;
+    default: assert(0); break;
+  }
+}
+
+word_t csrs_get(uint32_t idx)
+{
+  word_t s_csr ;
+  switch(idx)
+  {
+    case CSR_MSTATUS: s_csr = cpu.csr_mstatus; break;
+    case CSR_MEPC: s_csr = cpu.csr_mepc ; break;
+    case CSR_MCAUSE: s_csr = cpu.csr_mcause;  break;
+    case CSR_MTVEC:  s_csr = cpu.csr_mtvec;  break;
+    default: assert(0); break;
+  }
+
+  return s_csr;
+}
