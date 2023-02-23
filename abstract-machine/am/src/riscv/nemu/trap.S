@@ -53,6 +53,13 @@ __am_asm_trap:
   LOAD t1, OFFSET_STATUS(sp)
   LOAD t2, OFFSET_EPC(sp)
   csrw mstatus, t1
+
+# ref : https://mullerlee.cyou/2020/07/09/riscv-exception-interrupt/
+# need to modified the mepc to the address of next instruction after the exception handler.
+#todo : handler interrupt , mepc does not need to add 4
+# 
+  addi t2, t2, 0x4
+
   csrw mepc, t2
 
   MAP(REGS, POP)

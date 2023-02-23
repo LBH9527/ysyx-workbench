@@ -193,11 +193,6 @@ static int decode_exec(Decode *s) {
   // 减去字(Substract Word). R-type, RV64I only.
   // x[rs1]减去 x[rs2]，结果截为 32 位，有符号扩展后写入 x[rd]。忽略算术溢出
   INSTPAT("0100000 ????? ????? 000 ????? 01110 11", subw   , R, R(dest) = SEXT(BITS(src1 - src2, 31, 0), 32) );  
-  // remw rd, rs1, rs2 x[rd] = sext(x[rs1][31: 0] %� x[rs2][31: 0])
-  // 求余数字(Remainder Word). R-type, RV64M only.
-  // x[rs1]的低 32 位除以 x[rs2]的低 32 位，向 0 舍入，都视为 2 的补码，将余数的有符号扩展 写入 x[rd]
-  INSTPAT("0000001 ????? ????? 110 ????? 01110 11", remw   , R, LOG_D("[remw] src1 : 0x%lx, src2  0x%lx:", src1, src2);  \
-                                                                R(dest) = SEXT( BITS(src1, 31, 0) % BITS(src2, 31, 0) ,32) );  
   // rem rd, rs1, rs2 x[rd] = x[rs1] %� x[rs2]
   // 求余数(Remainder). R-type, RV32M and RV64M.
   // x[rs1]除以 x[rs2]，向 0 舍入，都视为 2 的补码，余数写入 x[rd]
@@ -215,7 +210,7 @@ static int decode_exec(Decode *s) {
   // 用寄存器 x[rs1]的低 32 位除以寄存器 x[rs2]的低 32 位，向零舍入，将这些数视为二进制补
   // 码，把经符号位扩展的 32 位商写入 x[rd]。
   INSTPAT("0000001 ????? ????? 100 ????? 01110 11", divw  , R, LOG_D("[divw] src1 : 0x%lx, src2  0x%lx:", src1, src2);  \
-                                                                R(dest) = SEXT( BITS(src1, 31, 0) / BITS(src2, 31, 0) ,32); \
+                                                                R(dest) = SEXT( ((int32_t) BITS(src1, 31, 0)) / ((int32_t)BITS(src2, 31, 0)) ,32); \
                                                                 LOG_D("dest : 0x%lx", R(dest))  );    
  
   //   divuw rd, rs1, rs2 x[rd] = sext(x[rs1][31:0] ÷u x[rs2][31:0])
@@ -250,12 +245,15 @@ static int decode_exec(Decode *s) {
   // 求无符号数的余数字(Remainder Word, Unsigned). R-type, RV64M only.
   // x[rs1]的低 32 位除以 x[rs2]的低 32 位，向 0 舍入，都视为无符号数，将余数的有符号扩展
   // 写入 x[rd]。
-  INSTPAT("0000001 ????? ????? 111 ????? 01110 11", remuw  , R, R(dest) = SEXT( ((word_t)BITS(src1, 31, 0) % (word_t)BITS(src2, 31, 0)), 32) ); 
+  INSTPAT("0000001 ????? ????? 111 ????? 01110 11", remuw  , R, R(dest) = SEXT( ((uint32_t)BITS(src1, 31, 0) % (uint32_t)BITS(src2, 31, 0)), 32) ); 
   // remw rd, rs1, rs2 x[rd] = sext(x[rs1][31: 0] %� x[rs2][31: 0])
   // 求余数字(Remainder Word). R-type, RV64M only.
   // x[rs1]的低 32 位除以 x[rs2]的低 32 位，向 0 舍入，都视为 2 的补码，将余数的有符号扩展
   // 写入 x[rd]。
-  INSTPAT("0000001 ????? ????? 110 ????? 01110 11", remw  , R, R(dest) = SEXT( ((sword_t)BITS(src1, 31, 0) % (sword_t)BITS(src2, 31, 0)), 32) ); 
+  INSTPAT("0000001 ????? ????? 110 ????? 01110 11", remw  , R,  LOG_D("[remw] src1 : 0x%lx, src2  0x%lx:", src1, src2); \
+                                                                LOG_D("[remw] src1 : %i", (int32_t)BITS(src1, 31, 0) ); \
+                                                                LOG_D("[remw] src1 %% src2 : %i" , ( ((int32_t)BITS(src1, 31, 0)) % ((int32_t)BITS(src2, 31, 0)) ) ); \
+                                                                R(dest) = SEXT( ( ((int32_t)BITS(src1, 31, 0)) % ((int32_t)BITS(src2, 31, 0)) ), 32) );  
 
   // divu rd, rs1, rs2 x[rd] = x[rs1] ÷u x[rs2]
   // 无符号除法(Divide, Unsigned). R-type, RV32M and RV64M.
@@ -304,14 +302,14 @@ static int decode_exec(Decode *s) {
   // 读后写控制状态寄存器 (Control and Status Register Read and Write). I-type, RV32I and RV64I.
   // 记控制状态寄存器 csr 中的值为 t。 把寄存器 x[rs1]的值写入 csr，再把 t 写入 x[rd]。
   INSTPAT("??????? ????? ????? 001 ????? 11100 11", csrrw  , I,  R(dest) = csrs_get(imm) ; csrs_set(imm ,src1); \
-                                                                  LOG_I("csrrw : csr num = 0x%lx, src1 : 0x%lx", imm, src1) );
+                                                                  LOG_D("csrrw : csr num = 0x%lx, src1 : 0x%lx", imm, src1) );
 
   // csrrs rd, csr, rs1 t = CSRs[csr]; CSRs[csr] = t | x[rs1]; x[rd] = t
   // 读后置位控制状态寄存器 (Control and Status Register Read and Set). I-type, RV32I and RV64I.
   // 记控制状态寄存器 csr 中的值为 t。 把 t 和寄存器 x[rs1]按位或的结果写入 csr，再把 t 写入
   // x[rd]。
   INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrs  , I, R(dest) = csrs_get(imm) ; csrs_set(imm , src1 | R(dest)) ; \
-                                                                 LOG_I("csrrs : csr num = 0x%lx, src1 : 0x%lx", imm, src1) );
+                                                                 LOG_D("csrrs : csr num = 0x%lx, src1 : 0x%lx", imm, src1) );
 
   // //csrrc rd, csr, rs1 t = CSRs[csr]; CSRs[csr] = t &~x[rs1]; x[rd] = t
   // // 读后清除控制状态寄存器 (Control and Status Register Read and Clear). I-type, RV32I and
@@ -336,12 +334,12 @@ static int decode_exec(Decode *s) {
   // 从机器模式异常处理程序返回。将 pc 设置为 CSRs[mepc], 将特权级设置成
   // CSRs[mstatus].MPP, CSRs[mstatus].MIE 置成 CSRs[mstatus].MPIE, 并且将
   // CSRs[mstatus].MPIE 为 1;并且，如果支持用户模式，则将 CSR [mstatus].MPP 设置为 0。
-  INSTPAT("0011000 00010 00000 000 00000 11100 11", mret  , R, s->dnpc = csrs_get(CSR_MEPC) + 4 ; \
-                                                                LOG_I("mret : mepc = 0x%lx", csrs_get(CSR_MEPC) ); );
+  INSTPAT("0011000 00010 00000 000 00000 11100 11", mret  , R, s->dnpc = csrs_get(CSR_MEPC) ; \
+                                                                LOG_D("mret : mepc = 0x%lx", csrs_get(CSR_MEPC) ); );
 
 
-  INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall , I, s->dnpc = isa_raise_intr( R(17), s->pc); \
-                                                                LOG_I("ecall :  R(17) = 0x%lx",  R(17)) ); // R(17) is $a7
+  INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall , I, s->dnpc = isa_raise_intr(11, s->pc) );
+                                                               
 
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , N, NEMUTRAP(s->pc, R(10))); // R(10) is $a0
   INSTPAT("??????? ????? ????? ??? ????? ????? ??", inv    , N, INV(s->pc));

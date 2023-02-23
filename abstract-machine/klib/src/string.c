@@ -135,11 +135,11 @@ void *memset(void *s, int c, size_t n) {
   assert(s != NULL);
   // printf("[memset] sizeof s is %d \r\n", sizeof(s));
   // assert(sizeof(s) >= n) ;
-  void *ps = s;
+  int *ps = s;
 
   while(n--)
   {
-    *(int*)ps = c;
+    *ps = c;
     ps++;
   }
 
@@ -172,7 +172,7 @@ void *memcpy(void *out, const void *in, size_t n) {
 
   char *p_out = out;
   const char* p_in = in;
-  assert(p_in + n < p_out);
+  // assert(p_in + n < p_out);
  // assert(p_out + n < p_in); // the source and dest objects overlap.
 
   size_t i ;
