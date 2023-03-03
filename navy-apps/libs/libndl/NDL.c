@@ -7,9 +7,12 @@
 static int evtdev = -1;
 static int fbdev = -1;
 static int screen_w = 0, screen_h = 0;
-
+static struct timeval now;
+// 以毫秒为单位返回系统时间
 uint32_t NDL_GetTicks() {
-  return 0;
+    gettimeofday(&now, NULL);
+
+    return (now.tv_sec *1000 +  now.tv_usec/1000 );
 }
 
 int NDL_PollEvent(char *buf, int len) {
@@ -57,6 +60,7 @@ int NDL_Init(uint32_t flags) {
   if (getenv("NWM_APP")) {
     evtdev = 3;
   }
+  
   return 0;
 }
 
