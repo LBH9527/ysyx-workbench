@@ -260,6 +260,14 @@ static int decode_exec(Decode *s) {
   // 用寄存器 x[rs1]的值除以寄存器 x[rs2]的值，向零舍入，将这些数视为无符号数，把商写入
   // x[rd]。
   INSTPAT("0000001 ????? ????? 101 ????? 01100 11", divu  , R, R(dest) = (word_t)src1 / (word_t)src2 ); 
+
+  // div rd, rs1, rs2 x[rd] = x[rs1] ÷s x[rs2]
+  // 除法(Divide). R-type, RV32M and RV64M.
+  // 用寄存器 x[rs1]的值除以寄存器 x[rs2]的值，向零舍入，将这些数视为二进制补码，把商写
+  // 入 x[rd]
+  INSTPAT("0000001 ????? ????? 100 ????? 01100 11", div  , R, R(dest) = (sword_t)src1 / (sword_t)src2 ); 
+
+
   // xor rd, rs1, rs2 x[rd] = x[rs1] ^ x[rs2]
   // 异或(Exclusive-OR). R-type, RV32I and RV64I.
   // x[rs1]和 x[rs2]按位异或，结果写入 x[rd]。

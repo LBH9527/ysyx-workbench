@@ -1,19 +1,22 @@
 #include <common.h>
 #include "syscall.h"
 #include "fs.h"
+#include <time.h>
 
-#define STRACE_ENABLE   1
+#define STRACE_ENABLE   0
 
 const char *syscall_name[] = {
    "exit", "yield", "open", "read", "write", "kill", "getpid", "close","lseek" ,"brk",
    "fstat","time","signal","execve","fork","link","unlink","wait","times","gettimeofday"
 };
 
-static int do_SYS_open(const char *pathname, int flags, int mode);
-static size_t do_SYS_read(int fd, void *buf, size_t len);
-static size_t do_SYS_write(int fd, const void *buf, size_t count);
-static int do_SYS_close(int fd);
-static size_t do_SYS_lseek(int fd, size_t offset, int whence);
+int do_SYS_open(const char *pathname, int flags, int mode);
+size_t do_SYS_read(int fd, void *buf, size_t len);
+size_t do_SYS_write(int fd, const void *buf, size_t count);
+int do_SYS_close(int fd);
+size_t do_SYS_lseek(int fd, size_t offset, int whence);
+int do_SYS_gettimeofday(struct timeval *tv);
+
 
 void do_syscall(Context *c) {
   uintptr_t a[4];
@@ -30,6 +33,7 @@ void do_syscall(Context *c) {
     case SYS_brk: c->GPR2 = 0; break;
     case SYS_close: c->GPR2 = do_SYS_close(c->GPR2); break;
     case SYS_lseek: c->GPR2 = do_SYS_lseek(c->GPR2, c->GPR3, c->GPR4); break;
+    case SYS_gettimeofday : c->GPR2 = do_SYS_gettimeofday((struct timeval *)c->GPR2); break;
     default: panic("Unhandled syscall ID = %d", a[0]);
   }
 #if (STRACE_ENABLE)
@@ -37,28 +41,36 @@ void do_syscall(Context *c) {
 #endif
 }
 
-static int do_SYS_open(const char *pathname, int flags, int mode)
+int do_SYS_open(const char *pathname, int flags, int mode)
 {
   return fs_open(pathname, flags, mode) ;
 }
 
-static size_t do_SYS_read(int fd, void *buf, size_t len)
+size_t do_SYS_read(int fd, void *buf, size_t len)
 {
   return fs_read(fd, buf, len) ;
 
 }
 
-static size_t do_SYS_write(int fd, const void *buf, size_t count)
+size_t do_SYS_write(int fd, const void *buf, size_t count)
 {
   return(fs_write(fd, buf, count));    
 }
 
-static size_t do_SYS_lseek(int fd, size_t offset, int whence) 
+size_t do_SYS_lseek(int fd, size_t offset, int whence) 
 {
   return fs_lseek(fd, offset, whence);
 }
 
-static int do_SYS_close(int fd)
+int do_SYS_close(int fd)
 {
   return fs_close(fd) ;
+}
+
+int do_SYS_gettimeofday(struct timeval *tv)
+{
+    tv->tv_sec =  io_read(AM_TIMER_UPTIME).us /1000000;
+    tv->tv_usec =  io_read(AM_TIMER_UPTIME).us % 1000000;
+    
+    return 0;
 }
