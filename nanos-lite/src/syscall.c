@@ -15,7 +15,7 @@ size_t do_SYS_read(int fd, void *buf, size_t len);
 size_t do_SYS_write(int fd, const void *buf, size_t count);
 int do_SYS_close(int fd);
 size_t do_SYS_lseek(int fd, size_t offset, int whence);
-int do_SYS_gettimeofday(struct timeval *tv);
+int do_SYS_gettimeofday(void *pTv );
 
 
 void do_syscall(Context *c) {
@@ -33,7 +33,7 @@ void do_syscall(Context *c) {
     case SYS_brk: c->GPR2 = 0; break;
     case SYS_close: c->GPR2 = do_SYS_close(c->GPR2); break;
     case SYS_lseek: c->GPR2 = do_SYS_lseek(c->GPR2, c->GPR3, c->GPR4); break;
-    case SYS_gettimeofday : c->GPR2 = do_SYS_gettimeofday((struct timeval *)c->GPR2); break;
+    case SYS_gettimeofday : c->GPR2 = do_SYS_gettimeofday((void *)c->GPR2); break;
     default: panic("Unhandled syscall ID = %d", a[0]);
   }
 #if (STRACE_ENABLE)
@@ -67,10 +67,13 @@ int do_SYS_close(int fd)
   return fs_close(fd) ;
 }
 
-int do_SYS_gettimeofday(struct timeval *tv)
+int do_SYS_gettimeofday(void *pTv)
 {
-    tv->tv_sec =  io_read(AM_TIMER_UPTIME).us /1000000;
-    tv->tv_usec =  io_read(AM_TIMER_UPTIME).us % 1000000;
+    struct timeval *p = (struct timeval *)pTv;
+
+    p->tv_usec =  io_read(AM_TIMER_UPTIME).us % 1000000;
+    p->tv_sec =  io_read(AM_TIMER_UPTIME).us /1000000;
+    
     
     return 0;
 }

@@ -2,7 +2,7 @@
 extern size_t ramdisk_write(const void *buf, size_t offset, size_t len) ;
 extern size_t ramdisk_read(void *buf, size_t offset, size_t len);
 extern size_t serial_write(const void *buf, size_t offset, size_t len) ;
-
+extern size_t events_read(void *buf, size_t offset, size_t len) ;
 typedef size_t (*ReadFn) (void *buf, size_t offset, size_t len);
 typedef size_t (*WriteFn) (const void *buf, size_t offset, size_t len);
 
@@ -15,7 +15,9 @@ typedef struct {
   size_t open_offset;
 } Finfo;
 
-enum {FD_STDIN, FD_STDOUT, FD_STDERR, FD_FB};
+// enum {FD_STDIN, FD_STDOUT, FD_STDERR, FD_FB, FD_EVENT};
+enum {FD_STDIN, FD_STDOUT, FD_STDERR, FD_EVENT};
+
 
 size_t invalid_read(void *buf, size_t offset, size_t len) {
   panic("should not reach here");
@@ -33,6 +35,10 @@ static Finfo file_table[] __attribute__((used)) = {
   [FD_STDIN]  = {"stdin", 0, 0, invalid_read, invalid_write, 0},
   [FD_STDOUT] = {"stdout", 0, 0, invalid_read, serial_write, 0},
   [FD_STDERR] = {"stderr", 0, 0, invalid_read, serial_write, 0},
+  // [FD_UART]   = {"uart", 0, 0, invalid_read, serial_write, 0},
+  // [FD_FB] = {"/dev/fb", 0, 0, invalid_read, invalid_write, 0},
+  [FD_EVENT] = {"/dev/events", 0, 0, events_read, invalid_write, 0},
+
 #include "files.h"
 };
 
@@ -51,7 +57,7 @@ int fs_open(const char *pathname, int flags, int mode)
       if( memcmp( pathname, file_table[index].name, sizeof(file_table[index].name) ) == 0)
       {
         is_find_file = true;
-        printf("[fs] fs open fd is 0x%x ,name is %s\n", index, file_table[index].name);
+        Log("[fs] fs open fd is 0x%x ,name is %s\n", index, file_table[index].name);
         break;
       }
     }
@@ -61,18 +67,27 @@ int fs_open(const char *pathname, int flags, int mode)
 
 size_t fs_read(int fd, void *buf, size_t len)
 {
-    size_t read_length = 0;
+    size_t read_length = 0; 
     size_t offset = 0;
+    // 块设备
+    if(file_table[fd].size != 0)
+    {
+      
+      //printf("[fs] open_offset is 0x%x \n", file_table[fd].open_offset);
+      // file-test 证明 ，assert 条件不成立
+      //assert(file_table[fd].open_offset + len < file_table[fd].size);
 
-    //printf("[fs] open_offset is 0x%x \n", file_table[fd].open_offset);
-    // file-test 证明 ，assert 条件不成立
-    //assert(file_table[fd].open_offset + len < file_table[fd].size);
+      offset = file_table[fd].disk_offset + file_table[fd].open_offset;
+      // printf("[fs] offset is 0x%x \n", offset);
 
-    offset = file_table[fd].disk_offset + file_table[fd].open_offset;
-    // printf("[fs] offset is 0x%x \n", offset);
-
-    read_length = ramdisk_read(buf, offset, len);
-    file_table[fd].open_offset += read_length;
+      read_length = ramdisk_read(buf, offset, len);
+      file_table[fd].open_offset += read_length;
+      
+    }
+    else  // 字符设备
+    {
+      read_length = file_table[fd].read(buf, offset, len);
+    }
 
     return read_length;
 }

@@ -29,7 +29,28 @@ size_t serial_write(const void *buf, size_t offset, size_t len) {
 }
 
 size_t events_read(void *buf, size_t offset, size_t len) {
-  return 0;
+  char *pBuf = buf;
+  
+  AM_INPUT_KEYBRD_T ev = io_read(AM_INPUT_KEYBRD);
+
+  if (ev.keycode != AM_KEY_NONE) 
+  {
+      if(ev.keydown == true)
+      {
+        len = sprintf(pBuf, "kd %s", keyname[ev.keycode]);
+      }
+      else
+      {
+        len = sprintf(pBuf, "ku %s", keyname[ev.keycode]);
+      }
+      // printf("[device] event read key code %d,  %s\n", ev.keycode,  pBuf );
+  }
+  else
+  {
+      len = 0;
+  }
+  
+  return len;
 }
 
 size_t dispinfo_read(void *buf, size_t offset, size_t len) {
