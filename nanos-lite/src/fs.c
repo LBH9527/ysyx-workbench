@@ -113,6 +113,7 @@ size_t fs_write(int fd, const void *buf, size_t len)
   size_t offset = 0;
   size_t write_length = 0;
 
+  // printf("[fs_write] : fd =%d, len = %d \n", fd, len);
   // 块设备
   if(file_table[fd].size != 0)
   {
@@ -150,7 +151,7 @@ size_t fs_write(int fd, const void *buf, size_t len)
 
 size_t fs_lseek(int fd, size_t offset, int whence)
 {
-  //printf("fd is: 0x%x, offset is %d, whence is %d\n", fd, offset, whence);
+  // printf("[fs_lseek] fd is: 0x%x, offset is %d, whence is %d\n", fd, offset, whence);
   switch(whence)
   {
     case SEEK_SET : file_table[fd].open_offset = offset; break;

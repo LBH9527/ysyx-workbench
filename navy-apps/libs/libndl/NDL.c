@@ -6,6 +6,8 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <stdbool.h>        // for bool
+#include <assert.h>
 
 static int evtdev = -1;
 static int fbdev = -1;
@@ -29,15 +31,66 @@ int NDL_PollEvent(char *buf, int len) {
 return 0;
 }
 
-// bool parse_key_value(char *key_value_str, char *key, uint32_t *value)
-// {
-//   const char *delim = ":";
-//   char *next_token;
-//   assert( (key_value_str != NULL) && (key != NULL) && (value != NULL) );
+static void remove_str_space(char *dest, const char *str)
+{
+    const char *pStr; 
+    char *pDest;
+
+    assert(str != NULL);
+    assert(dest != NULL);
+    pStr = str;
+    pDest = dest;
+
+    while(*pStr != 0)
+    {
+        if(*pStr != ' ')
+        {
+            *pDest = *pStr;
+            pDest++;
+        }
+
+        pStr++;
+    }
+}
+
+#define KEY_VLAUE_SIZE 64
+bool parse_key_value(char *key_value_str, char *key, uint32_t *value)
+{
+    const char *delim = ":\n";
+    bool is_find = false;
+
+    char trimStr[KEY_VLAUE_SIZE]; 
+    // printf("KEY is %s\n", key);
+    assert( (key_value_str != NULL) && (key != NULL) && (value != NULL) );    
+    assert(strlen(key_value_str) <= (KEY_VLAUE_SIZE -1) );
+    //去掉字符串中的空格
+    remove_str_space(trimStr, key_value_str);
+
+    char *token = strtok(trimStr, delim);
+    if (token == NULL) {
+        printf ("key / value string is null.");
+        return false;
+    }
+
+    while(token) {
+        if(is_find == true)
+        {
+            *value = atoi(token);
+            break;
+        }
+        else if(strcmp(token, key) == 0)
+        {
+            is_find = true;
+        }
+        token = strtok(NULL, delim);    // 获取下个 token
+    }
+
+    if(is_find)
+        return true;
+    return false;
+}
 
 
-
-// }
 // 打开一张(*w) X (*h)的画布
 // 如果*w和*h均为0, 则将系统全屏幕作为画布, 并将*w和*h分别设为系统屏幕的大小
 void NDL_OpenCanvas(int *w, int *h) {
@@ -66,24 +119,30 @@ void NDL_OpenCanvas(int *w, int *h) {
 
       printf("\nNDL_OpenCanvas : w = %d, h = %d \r\n" ,*w, *h);
       read(dispinfo_fd, buf, sizeof(buf) - 1);
-      // for( i=0; i<sizeof(buf); i++)
-      // {
-      //   if(buf[i] == ":")
-      //   {
-      //     screen_w = atoi(buf)
-      //   }
-      // }
-      // while()
-      // {
-      //   position ++;
-      //   screen_w = 
-      // }
-      screen_w = 400; 
-      screen_h = 300;
-      // screen_w = (screen_w > *w ) ? *w : screen_w;
-      // screen_h = (screen_h > *h ) ? *h : screen_h;
-      printf("[NDL]buf = %s \r\n", buf);
 
+      if(parse_key_value(buf, "WIDTH", &screen_w) )
+      {
+          printf("[WIDTH] : %d\n", screen_w);
+      }
+      else
+      {
+          printf("Didn't find key of [WIDTH] \n");
+          assert(0);
+      }
+
+      if(parse_key_value(buf, "HEIGHT", &screen_h) )
+      {
+          printf("[HEIGHT] : %d\n", screen_h);
+      }
+      else
+      {
+          printf("Didn't find key of [HEIGHT] \n");
+          assert(0);
+      }
+      if (*w > screen_w)
+        *w = screen_w;
+      if (*h > screen_h)
+        *h = screen_h;
   }
 }
 
@@ -93,11 +152,20 @@ void NDL_DrawRect(uint32_t *pixels, int x, int y, int w, int h) {
   int x_index;
   int y_index;
   uint32_t *pBuf = pixels;
-  
+  uint32_t x_offset = (screen_w - w) / 2 + y;
+  uint32_t y_offset = (screen_h - h) / 2 + x;
+  // uint32_t x_offset = y;
+  // uint32_t y_offset = x;
+
+
   for( y_index =0; y_index < h; y_index++)
   {
-    fseek(fb_device, (y_index + y + ) *  screen_w + x, SEEK_SET);
+    // printf("y_index = %d, w = %d\n", y_index, w);
+
+    fseek(fb_device, (y_index + y_offset) *  screen_w + x_offset, SEEK_SET);
+
     fwrite(pBuf, sizeof(uint32_t), w, fb_device);
+    fflush(fb_device);    //writes any unwritten data from the stream's buffer to the associated output device.
     pBuf += w;
   }
 
