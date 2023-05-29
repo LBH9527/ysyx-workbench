@@ -124,7 +124,7 @@ libs:
 ### Rule (link): objects (`*.o`) and libraries (`*.a`) -> `$(APP)`, the final ELF binary to be packed into application (ld)
 $(APP): $(OBJS) libs
 	@echo + LD "->" $(shell realpath $@ --relative-to .)
-	@$(LD) $(LDFLAGS) -o $@ $(WL)--start-group $(LINKAGE) $(WL) -Map=$(APP).map --end-group
+	@$(LD) $(LDFLAGS) -o $@ $(WL)--start-group $(LINKAGE) $(WL)-Map=$(APP).map $(WL)--end-group
 	@$(OBJDUMP) -d $(APP) > $(APP).txt
 
 ### Rule (archive): objects (`*.o`) -> `ARCHIVE.a` (ar)
@@ -169,8 +169,8 @@ $(CLEAN_ALL):
 .PHONY: clean-all $(CLEAN_ALL)
 
 ### Build fsimg and ramdisk for Nanos-lite
-APPS =
-TESTS = dummy hello file-test timer-test  event-test bmp-test
+APPS = nslider
+TESTS =  hello file-test timer-test  event-test bmp-test
 
 fsimg: $(addprefix apps/, $(APPS)) $(addprefix tests/, $(TESTS))
 	-for t in $^; do $(MAKE) -s -C $(NAVY_HOME)/$$t install; done
