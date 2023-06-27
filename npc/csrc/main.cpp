@@ -6,6 +6,16 @@
 #include <fstream>
 #include "Vrvcpu.h"   //design under test of top
 
+
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
+
 #ifdef VM_TRACE                 // --trace
 #include <verilated_vcd_c.h>
 static VerilatedVcdC* tfp;       //to form *.vcd file
@@ -43,12 +53,21 @@ void read_inst( char* filename)
   fclose(fp);
 }
 
+static char *img_file = NULL;
+
 int main(int argc, char **argv)
 {
 	char filename[100];
-	printf("Please enter your filename~\n");
-	cin >> filename;
-	read_inst(filename);
+
+  printf("argc is %d \n", argc);
+  for(uint32_t i = 0; i< argc; i++)
+    printf("argc%d is %s \n", i, argv[i]);
+  img_file = argv[argc-1];
+	read_inst(img_file);
+
+	// printf("Please enter your filename~\n");
+	// cin >> filename;
+	// read_inst(filename);
 
   // initialization
   Verilated::commandArgs(argc, argv);
@@ -99,3 +118,14 @@ int main(int argc, char **argv)
   exit(0);
   return 0;
 }
+
+
+
+//ebreak in c++
+extern "C" void ebreak(){
+  printf(ANSI_COLOR_GREEN);
+  printf("excute the ebreak inst\n");
+  printf(ANSI_COLOR_RESET);
+  // hit_exit(cpu_gpr[10]);
+}
+ 

@@ -48,8 +48,8 @@ VERILATOR_FLAGS += --top-module rvcpu
 
 # Input files for Verilator
 VERILATOR_INPUT += $(shell find $(./vsrc ) -name "*.v")
-# VERILATOR_INPUT +=  ./csrc/main.cpp
-VERILATOR_INPUT += $(shell find $(./csrc ) -name "*.cpp")  
+VERILATOR_INPUT +=  ./csrc/main.cpp
+# VERILATOR_INPUT += $(shell find $(./csrc ) -name "*.cpp")  
 
 
 default: build
@@ -59,18 +59,23 @@ build:
 	@echo "-- new process of riscv"
 
 	@echo
-	@echo "-- VERILATE ----------------"
+	@echo "-- VERILATE & BUILD --------"
 	$(VERILATOR) $(VERILATOR_FLAGS) $(VERILATOR_INPUT)
 
-	@echo
-	@echo "-- BUILD -------------------"
+# To compile, we can either
+# 1. Pass --build to Verilator by editing VERILATOR_FLAGS above.
+# 2. Or, run the make rules Verilator does:
+#	$(MAKE) -j -C obj_dir -f Vtop.mk
+# 3. Or, call a submakefile where we can override the rules ourselves:
+
 
 run:
 	@echo
 	@echo "-- RUN ---------------------"
-	@rm -rf logs
-	@mkdir -p logs
-	obj_dir/Vrvcpu
+	# @rm -rf logs
+	# @mkdir -p logs
+	-j -C obj_dir
+	obj_dir/Vrvcpu $(RUN_ARGS)
 
 	@echo
 	@echo "-- DONE --------------------"

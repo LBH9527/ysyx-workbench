@@ -5,6 +5,17 @@
 
 `include "defines.v"
 
+//ebreak in verilog
+import "DPI-C" function void ebreak();
+// module EBREAK(
+//     input wire [31:0] inst_i
+// );
+// always @(*) begin
+//     if(inst_i == `INST_EBREAK) 
+//     ebreak();       
+// end
+// endmodule
+
 
 module rvcpu(
   input wire            clk,
@@ -39,6 +50,11 @@ wire [`REG_BUS] r_data2;
 wire [4 : 0]inst_type_o;
 // exe_stage -> regfile
 wire [`REG_BUS]rd_data;
+
+always @(*) begin
+    if(inst == `INST_EBREAK) 
+    ebreak();       
+end
 
 if_stage If_stage(
   .clk(clk),

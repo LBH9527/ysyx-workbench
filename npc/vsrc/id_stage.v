@@ -1,5 +1,5 @@
 
-//--xuezhen--
+//instruction decode
 
 `include "defines.v"
 

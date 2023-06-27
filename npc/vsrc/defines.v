@@ -4,3 +4,5 @@
 `define ZERO_WORD  64'h00000000_00000000   
 `define REG_BUS    63 : 0     
 `define INST_ADD   8'h11
+
+`define INST_EBREAK 32'h0010_0073
