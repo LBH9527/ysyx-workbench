@@ -123,7 +123,7 @@ function update_ysyx_workbench() {
     bash init.sh nanos-lite
     bash init.sh navy-apps
     bash init.sh nvboard
-
+    bash init.sh npc
     # nemu 和 abstract-machine 目录 已经存在，不需要`init.sh` 来下载， 但是需要添加这两个目录到 bashrc
     bash init.sh addenv
     source ~/.bashrc
