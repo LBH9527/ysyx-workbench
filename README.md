@@ -9,7 +9,8 @@ bash init.sh subproject-name
 [lecture note]: https://docs.ysyx.org/schedule.html
 
 框架代码 ：
-- Navy-apps                 # 应用程序集 
+- Navy-apps                 # 应用程序集, 
+- nanos-lite                # 基于(AM)开发的 operating  system.
 - am-kernels                # 基于(AM)开发的应用程序 
 - abstract-machine(AM)      # 抽象计算机(AM)
 - nemu                      # 全系统模拟器 NEMU
