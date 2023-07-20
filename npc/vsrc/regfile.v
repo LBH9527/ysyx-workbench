@@ -1,22 +1,24 @@
 
+/*
+register file
+*/
 `include "defines.v"
 
-module regfile(
+module regfile (
     input  wire clk,
 	input  wire rst,
+
+	// idu ctrl ---> regfile
+	input  wire 		  	register_write_enable,	// write enable
+	input  wire  [4  : 0] 	register_write_addr,			// write reg addr
+	input  wire  [`REG_BUS] register_write_data,				// write data
 	
-	input  wire  [4  : 0] w_addr,			// write reg addr
-	input  wire  [`REG_BUS] w_data,			// write data
-	input  wire 		  w_ena,
+	input  wire  [4  : 0] 	read_register_1,		// read reg addr
+	output reg   [`REG_BUS] rs1_data,			// [out] read data
 	
-	input  wire  [4  : 0] r_addr1,			// read reg addr
-	output reg   [`REG_BUS] r_data1,		// [out] read data
-	input  wire 		  r_ena1,
-	
-	input  wire  [4  : 0] r_addr2,			// read reg addr
-	output reg   [`REG_BUS] r_data2,		// [out] read data
-	input  wire 		  r_ena2
-    );
+	input  wire  [4  : 0] 	read_register_2,		// read reg addr
+	output reg   [`REG_BUS] rs2_data			// [out] read data
+);
 
     // 32 registers
 	reg [`REG_BUS] 	regs[0 : 31];
@@ -60,27 +62,41 @@ module regfile(
 		end
 		else 
 		begin
-			if ((w_ena == 1'b1) && (w_addr != 5'h00))	
-				regs[w_addr] <= w_data;
+			if ((register_write_enable == `REG_WRITE_ENABLE) && (register_write_addr != `REGISTER_X0))	
+				regs[register_write_addr] <= register_write_data;
 		end
 	end
-	
+
 	always @(*) begin
 		if (rst == 1'b1)
-			r_data1 = `ZERO_WORD;
-		else if (r_ena1 == 1'b1)
-			r_data1 = regs[r_addr1];
+			rs1_data = `ZERO_WORD;
 		else
-			r_data1 = `ZERO_WORD;
+			rs1_data = regs[read_register_1];
 	end
 	
 	always @(*) begin
 		if (rst == 1'b1)
-			r_data2 = `ZERO_WORD;
-		else if (r_ena2 == 1'b1)
-			r_data2 = regs[r_addr2];
+			rs2_data = `ZERO_WORD;
 		else
-			r_data2 = `ZERO_WORD;
+			rs2_data = regs[read_register_2];
 	end
+	// always @(*) begin
+	// 	if (rst == 1'b1)
+	// 		read_data_1 = `ZERO_WORD;
+	// 	else if (r_ena1 == 1'b1)
+	// 		read_data_1 = regs[read_register_1];
+	// 	else
+	// 		read_data_1 = `ZERO_WORD;
+	// end
+	
+	// always @(*) begin
+	// 	if (rst == 1'b1)
+	// 		read_data_2 = `ZERO_WORD;
+	// 	else if (r_ena2 == 1'b1)
+	// 		read_data_2 = regs[read_register_2];
+	// 	else
+	// 		read_data_2 = `ZERO_WORD;
+	// end
 
 endmodule
+

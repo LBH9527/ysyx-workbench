@@ -29,34 +29,46 @@ module rvcpu(
 
 // id_stage
 // id_stage -> regfile
-wire rs1_r_ena;
+// wire rs1_r_ena;
 wire [4 : 0]rs1_r_addr;
-wire rs2_r_ena;
+// wire rs2_r_ena;
 wire [4 : 0]rs2_r_addr;
-wire rd_w_ena;
-wire [4 : 0]rd_w_addr;
+
+wire reg_write_enable;
+wire [4 : 0]reg_write_addr;
+wire  [`REG_BUS] register_write_data;
 // id_stage -> exe_stage
-wire [4 : 0]inst_type;      // instruction type
-wire [7 : 0]inst_opcode;
-wire [`REG_BUS]op1;
-wire [`REG_BUS]op2;
+// wire [4 : 0]inst_type;      // instruction type
+// wire [7 : 0]inst_opcode;
+
+wire [3 : 0]ALUCtrl;
+wire [`REG_BUS]ALUSrcA;
+wire [`REG_BUS]ALUSrcB;
+
 
 // regfile -> id_stage
-wire [`REG_BUS] r_data1;
-wire [`REG_BUS] r_data2;
+wire [`REG_BUS] rs1_data;
+wire [`REG_BUS] rs2_data;
 
 // exe_stage
 // exe_stage -> other stage
-wire [4 : 0]inst_type_o;
 // exe_stage -> regfile
-wire [`REG_BUS]rd_data;
+wire [`REG_BUS]ALUout;
+
+assign rs1_r_addr = inst[19 : 15];
+assign rs2_r_addr = inst[24 : 20];
+
 
 always @(*) begin
     if(inst == `INST_EBREAK) 
     ebreak();       
 end
 
-if_stage If_stage(
+
+
+
+
+ifu ifu_inst(
   .clk(clk),
   .rst(rst),
   
@@ -64,49 +76,65 @@ if_stage If_stage(
   .inst_ena(inst_ena)
 );
 
-id_stage Id_stage(
-  .clk(clk),
-  .rst(rst),
+// idu_ctrl idu_ctrl_inst(
+//   .inst(inst),
+//   .rs1_data_i(r_data1),
+//   .rs2_data_i(r_data2),
+  
+//   // // .rs1_r_ena(rs1_r_ena),
+//   // .rs1_r_addr(rs1_r_addr),
+//   // .rs2_r_ena(rs2_r_ena),
+//   // .rs2_r_addr(rs2_r_addr),
+//   .reg_write_enable(reg_write_enable),  // out
+//   .reg_write_addr(reg_write_enable),
+//   .alu_ctrl(ALUCtrl),
+//   // .inst_opcode_o(inst_opcode),
+//   .alu_src_a(ALUSrcA),
+//   .alu_src_b(ALUSrcB)
+// );
+
+idu_ctrl_main idu_ctrl_main_inst(
   .inst(inst),
-  .rs1_data(r_data1),
-  .rs2_data(r_data2),
-  
-  .rs1_r_ena(rs1_r_ena),
-  .rs1_r_addr(rs1_r_addr),
-  .rs2_r_ena(rs2_r_ena),
-  .rs2_r_addr(rs2_r_addr),
-  .rd_w_ena(rd_w_ena),
-  .rd_w_addr(rd_w_addr),
-  .inst_type(inst_type),
-  .inst_opcode(inst_opcode),
-  .op1(op1),
-  .op2(op2)
+  .rs1_data(rs1_data),
+  .rs2_data(rs2_data),
+
+  .alu_ctrl(ALUCtrl),
+  .alu_src_a(ALUSrcA),
+  .alu_src_b(ALUSrcB),
+
+  .reg_write_enable(reg_write_enable),  // out
+  .reg_write_addr(reg_write_addr)
 );
 
-exe_stage Exe_stage(
-  .rst(rst),
-  .inst_type_i(inst_type),
-  .inst_opcode(inst_opcode),
-  .op1(op1),
-  .op2(op2),
+
+
+exeu_alu exeu_alu_inst(
+  // .rst(rst),
+  // .inst_type_i(inst_type),
+  // .inst_opcode_i(inst_opcode),
+  .alu_src_a(ALUSrcA),
+  .alu_src_b(ALUSrcB),
   
-  .inst_type_o(inst_type_o),
-  .rd_data(rd_data)
+  .alu_ctrl(ALUCtrl),
+  .alu_out(ALUout)
 );
 
-regfile Regfile(
+assign register_write_data = ALUout;
+
+regfile regfile_inst(
   .clk(clk),
   .rst(rst),
-  .w_addr(rd_w_addr),
-  .w_data(rd_data),
-  .w_ena(rd_w_ena),
+
+  .register_write_addr(reg_write_addr),
+  .register_write_data(register_write_data),
+  .register_write_enable(reg_write_enable), // in
   
-  .r_addr1(rs1_r_addr),
-  .r_data1(r_data1),      // out
-  .r_ena1(rs1_r_ena),
-  .r_addr2(rs2_r_addr),
-  .r_data2(r_data2),      // out
-  .r_ena2(rs2_r_ena)
+  .read_register_1(rs1_r_addr), // in
+  .rs1_data(rs1_data),        // out
+  // .r_ena1(rs1_r_ena),
+  .read_register_2(rs2_r_addr), // in
+  .rs2_data(rs2_data)        // out
+  // .r_ena2(rs2_r_ena)
 );
 
 endmodule

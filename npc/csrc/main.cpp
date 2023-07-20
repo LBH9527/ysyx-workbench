@@ -36,6 +36,7 @@ int inst_rom[65536];
 
 void read_inst( char* filename)
 {
+  printf("NPC run file name is \" %s \"; ", filename);
   FILE *fp = fopen(filename, "rb");
   if( fp == NULL ) {
 		printf( "Can not open this file!\n" );
@@ -44,6 +45,7 @@ void read_inst( char* filename)
   
   fseek(fp, 0, SEEK_END);
   size_t size = ftell(fp);
+  printf("file siez is %zd ! \r\n", size);
   fseek(fp, 0, SEEK_SET);
   size = fread(inst_rom, size, 1, fp);
   for(int i=0; i<ftell(fp)/4; i++)
@@ -60,6 +62,8 @@ int main(int argc, char **argv)
 	char filename[100];
 
   printf("argc is %d \n", argc);
+  assert(argc > 1);
+  // printf binary
   for(uint32_t i = 0; i< argc; i++)
     printf("argc%d is %s \n", i, argv[i]);
   img_file = argv[argc-1];
@@ -93,7 +97,7 @@ int main(int argc, char **argv)
 		  
 	  if( main_time < 10 )
 	  {
-		top->rst = 1;
+		  top->rst = 1;
 	  }
 	  else
 	  {
@@ -106,6 +110,10 @@ int main(int argc, char **argv)
 	  tfp->dump(main_time);
 #endif    
 	  main_time++;
+
+    // Read outputs
+    VL_PRINTF("[%" PRId64 "] clk=%x rst=%x inst_addr=0x%" PRIx64 " inst=%x \n",
+              main_time, top->clk, top->rst, top->inst_addr, top->inst);
 	}
 		
   // clean

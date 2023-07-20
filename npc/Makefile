@@ -75,7 +75,7 @@ run:
 	# @rm -rf logs
 	# @mkdir -p logs
 	-j -C obj_dir
-	obj_dir/Vrvcpu $(RUN_ARGS)
+	obj_dir/Vrvcpu $(ARGS) $(IMG)
 
 	@echo
 	@echo "-- DONE --------------------"

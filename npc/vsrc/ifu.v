@@ -3,7 +3,7 @@
 
 `include "defines.v"
 
-module if_stage(
+module ifu(
   input wire clk,
   input wire rst,
   
@@ -19,7 +19,7 @@ always@( posedge clk )
 begin
   if( rst == 1'b1 )
   begin
-    pc <= `ZERO_WORD ;
+    pc <= `RESET_PC ;
   end
   else
   begin
